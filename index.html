@@ -1,219 +1,58 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Image Slider Puzzle</title>
-  <style>
-    body { margin:0; font-family:sans-serif; background:#0b1020; color:#fff; display:flex; flex-direction:column; align-items:center; }
-    header { padding:20px; text-align:center; }
-    h1 { margin:0; font-size:24px; }
-    #controls { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin:15px; }
-    #controls select, #controls button, #controls input { padding:8px 12px; border-radius:8px; border:1px solid #555; background:#121733; color:#fff; }
-    #controls button { cursor:pointer; }
-    #puzzle { 
-      display:grid; 
-      gap:2px; 
-      background:#333; 
-      border:2px solid #222; 
-      border-radius:12px; 
-      overflow:hidden; 
-      position:relative;
-    }
-    .tile { 
-      background-size:calc(var(--size)*100%) calc(var(--size)*100%); 
-      cursor:pointer; 
-      border-radius:6px; 
-      transition: all 0.25s ease; /* 👈 smooth sliding */
-    }
-    .tile.blank { background:none; cursor:default; }
-    #sidebar { margin:15px; display:flex; flex-direction:column; gap:10px; align-items:center; }
-    #sidebar .stat { background:#121733; padding:10px 15px; border-radius:10px; width:180px; text-align:center; }
-    #preview { width:180px; height:180px; border:2px solid #222; border-radius:10px; object-fit:cover; }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>🧩 Image Slider Puzzle</h1>
-    <p>Arrange the scrambled pieces to solve the puzzle!</p>
-  </header>
+function init(){
+  puzzle.style.setProperty('--size', size);
+  puzzle.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+  puzzle.style.width = "500px";
+  puzzle.style.height = "500px";
+  puzzle.innerHTML = '';
+  tiles = [];
 
-  <div id="controls">
-    <select id="gridSize">
-      <option value="3">3x3</option>
-      <option value="4" selected>4x4</option>
-      <option value="5">5x5</option>
-    </select>
-    <button onclick="shuffle()">Shuffle</button>
-    <button onclick="showSolved()">Auto-Solve</button>
-    <input type="file" id="upload" accept="image/*">
-  </div>
-
-  <div style="display:flex; gap:20px; flex-wrap:wrap; justify-content:center;">
-    <div id="puzzle"></div>
-    <div id="sidebar">
-      <div class="stat">⏱️ Time: <span id="time">00:00</span></div>
-      <div class="stat">🧮 Moves: <span id="moves">0</span></div>
-      <div class="stat">🏆 Best: <span id="best">—</span></div>
-      <img id="preview" alt="Preview" />
-    </div>
-  </div>
-
-  <script>
-    let size = 4;
-    let tiles = [];
-    let emptyIndex;
-    let imgUrl = "https://picsum.photos/500";
-    let moveCount = 0;
-    let seconds = 0;
-    let timerId = null;
-
-    const puzzle = document.getElementById('puzzle');
-    const gridSize = document.getElementById('gridSize');
-    const upload = document.getElementById('upload');
-    const movesEl = document.getElementById('moves');
-    const timeEl = document.getElementById('time');
-    const bestEl = document.getElementById('best');
-    const preview = document.getElementById('preview');
-
-    gridSize.addEventListener('change', () => {
-      size = parseInt(gridSize.value);
-      resetStats();
-      init();
-    });
-
-    upload.addEventListener('change', e => {
-      const file = e.target.files[0];
-      if(file){
-        const reader = new FileReader();
-        reader.onload = function(evt){
-          imgUrl = evt.target.result;
-          preview.src = imgUrl;
-          resetStats();
-          init();
-        }
-        reader.readAsDataURL(file);
-      }
-    });
-
-    function resetStats(){
-      moveCount = 0;
-      seconds = 0;
-      movesEl.textContent = '0';
-      timeEl.textContent = '00:00';
-      clearInterval(timerId);
-      timerId = null;
-    }
-
-    function startTimer(){
-      if(timerId) return;
-      timerId = setInterval(()=>{
-        seconds++;
-        const m = String(Math.floor(seconds/60)).padStart(2,'0');
-        const s = String(seconds%60).padStart(2,'0');
-        timeEl.textContent = `${m}:${s}`;
-      },1000);
-    }
-
-    function init(){
-      puzzle.style.setProperty('--size', size);
-      puzzle.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-      puzzle.style.width = "500px";
-      puzzle.style.height = "500px";
-      puzzle.innerHTML = '';
-      tiles = [];
-
-      let count = 0;
-      for(let row=0; row<size; row++){
-        for(let col=0; col<size; col++){
-          count++;
-          const index = row*size+col;
-          if(count === size*size){
-            emptyIndex = index;
-            tiles.push(null);
-            continue;
-          }
-          const tile = document.createElement('div');
-          tile.className = 'tile';
-          tile.style.backgroundImage = `url(${imgUrl})`;
-          tile.style.backgroundSize = `${size*100}% ${size*100}%`;
-          tile.style.backgroundPosition = `${(col/(size-1))*100}% ${(row/(size-1))*100}%`;
-          tile.style.aspectRatio = '1/1';
-          tile.dataset.correct = index;
-          tile.dataset.index = index; // store current position
-          tile.style.gridRow = row+1;
-          tile.style.gridColumn = col+1;
-          tile.addEventListener('click', () => move(index));
-          puzzle.appendChild(tile);
-          tiles.push(tile);
-        }
-      }
-      preview.src = imgUrl;
-    }
-
-    function move(index, isShuffling=false){
-      const row = Math.floor(index/size);
-      const col = index % size;
-      const emptyRow = Math.floor(emptyIndex/size);
-      const emptyCol = emptyIndex % size;
-
-      if((row===emptyRow && Math.abs(col-emptyCol)===1) || (col===emptyCol && Math.abs(row-emptyRow)===1)){
-        [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
-        updatePositions();
+  let count = 0;
+  for(let row=0; row<size; row++){
+    for(let col=0; col<size; col++){
+      count++;
+      const index = row*size+col;
+      if(count === size*size){
         emptyIndex = index;
-        if(!isShuffling){
-          moveCount++;
-          movesEl.textContent = moveCount;
-          startTimer();
-          checkWin();
-        }
+        tiles.push(null);
+        continue;
       }
-    }
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.style.backgroundImage = `url(${imgUrl})`;
+      tile.style.backgroundSize = `${size*100}% ${size*100}%`;
+      tile.style.backgroundPosition = `${(col/(size-1))*100}% ${(row/(size-1))*100}%`;
+      tile.style.aspectRatio = '1/1';
+      tile.dataset.correct = index;
 
-    function updatePositions(){
-      tiles.forEach((tile, i) => {
-        if(tile){
-          tile.style.gridRow = Math.floor(i/size)+1;
-          tile.style.gridColumn = (i%size)+1;
-        }
+      // 🟢 click looks up current index dynamically
+      tile.addEventListener('click', () => {
+        const currentIndex = tiles.indexOf(tile);
+        move(currentIndex);
       });
-    }
 
-    function shuffle(){
-      resetStats();
-      for(let i=0; i<200; i++){
-        const neighbors = [];
-        const row = Math.floor(emptyIndex/size);
-        const col = emptyIndex % size;
-        if(row>0) neighbors.push(emptyIndex-size);
-        if(row<size-1) neighbors.push(emptyIndex+size);
-        if(col>0) neighbors.push(emptyIndex-1);
-        if(col<size-1) neighbors.push(emptyIndex+1);
-        const moveIndex = neighbors[Math.floor(Math.random()*neighbors.length)];
-        move(moveIndex, true);
-      }
+      puzzle.appendChild(tile);
+      tiles.push(tile);
     }
+  }
+  preview.src = imgUrl;
+}
 
-    function showSolved(){
-      resetStats();
-      init();
+function move(index, isShuffling=false){
+  const row = Math.floor(index/size);
+  const col = index % size;
+  const emptyRow = Math.floor(emptyIndex/size);
+  const emptyCol = emptyIndex % size;
+
+  if((row===emptyRow && Math.abs(col-emptyCol)===1) || (col===emptyCol && Math.abs(row-emptyRow)===1)){
+    [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
+    updatePositions();
+    emptyIndex = index;
+
+    if(!isShuffling){
+      moveCount++;
+      movesEl.textContent = moveCount;
+      startTimer();
+      checkWin();
     }
-
-    function checkWin(){
-      let solved = true;
-      for(let i=0; i<tiles.length-1; i++){
-        if(!tiles[i] || parseInt(tiles[i].dataset.correct) !== i){
-          solved = false;
-          break;
-        }
-      }
-      if(solved){
-        clearInterval(timerId);
-        bestEl.textContent = `${timeEl.textContent} • ${moveCount} moves`;
-        alert(`🎉 You solved it in ${timeEl.textContent} with ${moveCount} moves!`);
-      }
-    }
-
-    init();
-  </script>
-</body>
-</html>
+  }
+}
