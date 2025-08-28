@@ -1,58 +1,158 @@
-function init(){
-  puzzle.style.setProperty('--size', size);
-  puzzle.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-  puzzle.style.width = "500px";
-  puzzle.style.height = "500px";
-  puzzle.innerHTML = '';
-  tiles = [];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Image Slider Puzzle</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      height: 100vh;
+      margin: 0;
+    }
+    #puzzle {
+      display: grid;
+      gap: 2px;
+      margin: 20px;
+      border: 3px solid #333;
+    }
+    .tile {
+      background-size: 300% 300%;
+      background-repeat: no-repeat;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-radius: 4px;
+    }
+    .empty {
+      background: #ddd;
+      cursor: default;
+    }
+    #controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    img {
+      width: 100px;
+      border: 2px solid #444;
+    }
+  </style>
+</head>
+<body>
+  <h2>Sliding Image Puzzle</h2>
+  <div id="controls">
+    <button onclick="shuffle()">Shuffle</button>
+    <span>Moves: <span id="moves">0</span></span>
+    <img id="preview" src="https://picsum.photos/300" alt="preview">
+  </div>
+  <div id="puzzle"></div>
 
-  let count = 0;
-  for(let row=0; row<size; row++){
-    for(let col=0; col<size; col++){
-      count++;
-      const index = row*size+col;
-      if(count === size*size){
-        emptyIndex = index;
-        tiles.push(null);
-        continue;
+<script>
+  const size = 3; // 3x3 puzzle
+  const imgUrl = "https://picsum.photos/300";
+  const puzzle = document.getElementById("puzzle");
+  const movesEl = document.getElementById("moves");
+  const preview = document.getElementById("preview");
+
+  let tiles = [];
+  let emptyIndex;
+  let moveCount = 0;
+
+  function init(){
+    puzzle.style.gridTemplateColumns = `repeat(${size}, 100px)`;
+    puzzle.style.gridTemplateRows = `repeat(${size}, 100px)`;
+    puzzle.innerHTML = '';
+    tiles = [];
+
+    let count = 0;
+    for(let row=0; row<size; row++){
+      for(let col=0; col<size; col++){
+        count++;
+        const index = row*size+col;
+        if(count === size*size){
+          emptyIndex = index;
+          tiles.push(null);
+          const emptyTile = document.createElement('div');
+          emptyTile.className = 'tile empty';
+          puzzle.appendChild(emptyTile);
+          continue;
+        }
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        tile.style.backgroundImage = `url(${imgUrl})`;
+        tile.style.backgroundSize = `${size*100}% ${size*100}%`;
+        tile.style.backgroundPosition = `${(col/(size-1))*100}% ${(row/(size-1))*100}%`;
+
+        // ✅ get tile's current position on click
+        tile.addEventListener("click", () => {
+          const currentIndex = tiles.indexOf(tile);
+          move(currentIndex);
+        });
+
+        puzzle.appendChild(tile);
+        tiles.push(tile);
       }
-      const tile = document.createElement('div');
-      tile.className = 'tile';
-      tile.style.backgroundImage = `url(${imgUrl})`;
-      tile.style.backgroundSize = `${size*100}% ${size*100}%`;
-      tile.style.backgroundPosition = `${(col/(size-1))*100}% ${(row/(size-1))*100}%`;
-      tile.style.aspectRatio = '1/1';
-      tile.dataset.correct = index;
+    }
+    preview.src = imgUrl;
+    moveCount = 0;
+    movesEl.textContent = moveCount;
+  }
 
-      // 🟢 click looks up current index dynamically
-      tile.addEventListener('click', () => {
-        const currentIndex = tiles.indexOf(tile);
-        move(currentIndex);
-      });
-
-      puzzle.appendChild(tile);
-      tiles.push(tile);
+  function updatePositions(){
+    puzzle.innerHTML = '';
+    for(let i=0; i<tiles.length; i++){
+      if(tiles[i]){
+        puzzle.appendChild(tiles[i]);
+      } else {
+        const emptyTile = document.createElement('div');
+        emptyTile.className = 'tile empty';
+        puzzle.appendChild(emptyTile);
+      }
     }
   }
-  preview.src = imgUrl;
-}
 
-function move(index, isShuffling=false){
-  const row = Math.floor(index/size);
-  const col = index % size;
-  const emptyRow = Math.floor(emptyIndex/size);
-  const emptyCol = emptyIndex % size;
+  function move(index){
+    const row = Math.floor(index/size);
+    const col = index % size;
+    const emptyRow = Math.floor(emptyIndex/size);
+    const emptyCol = emptyIndex % size;
 
-  if((row===emptyRow && Math.abs(col-emptyCol)===1) || (col===emptyCol && Math.abs(row-emptyRow)===1)){
-    [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
-    updatePositions();
-    emptyIndex = index;
-
-    if(!isShuffling){
+    if((row===emptyRow && Math.abs(col-emptyCol)===1) ||
+       (col===emptyCol && Math.abs(row-emptyRow)===1)){
+      [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
+      emptyIndex = index;
+      updatePositions();
       moveCount++;
       movesEl.textContent = moveCount;
-      startTimer();
-      checkWin();
     }
   }
-}
+
+  function shuffle(){
+    for(let i=0;i<100;i++){
+      const neighbors = getNeighbors(emptyIndex);
+      const rand = neighbors[Math.floor(Math.random()*neighbors.length)];
+      move(rand);
+    }
+    moveCount = 0;
+    movesEl.textContent = moveCount;
+  }
+
+  function getNeighbors(index){
+    const row = Math.floor(index/size);
+    const col = index % size;
+    const neighbors = [];
+    if(row>0) neighbors.push(index-size);
+    if(row<size-1) neighbors.push(index+size);
+    if(col>0) neighbors.push(index-1);
+    if(col<size-1) neighbors.push(index+1);
+    return neighbors;
+  }
+
+  init();
+</script>
+</body>
+</html>
