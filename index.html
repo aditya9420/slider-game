@@ -2,79 +2,146 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Image Slider Puzzle</title>
+  <title>Sliding Image Puzzle</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+    * { box-sizing: border-box; }
     body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      font-family: Arial, sans-serif;
-      background: #f0f0f0;
-      height: 100vh;
-      margin: 0;
+      min-height: 100vh;
+      color: #fff;
     }
+
+    h1 {
+      margin: 20px 0 5px;
+      font-size: 32px;
+      text-shadow: 1px 1px 5px rgba(0,0,0,0.5);
+    }
+
+    #controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 15px;
+      align-items: center;
+    }
+
+    #controls button, #controls input[type="file"] {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      background: #ff6b6b;
+      color: #fff;
+      transition: 0.2s;
+    }
+
+    #controls button:hover, #controls input[type="file"]:hover {
+      background: #ff4757;
+    }
+
+    #controls span {
+      font-size: 18px;
+    }
+
+    #preview {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid #fff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
     #puzzle {
       display: grid;
-      gap: 2px;
+      gap: 4px;
       margin: 20px;
-      border: 3px solid #333;
+      border: 3px solid #fff;
+      border-radius: 12px;
+      background: #222;
     }
+
     .tile {
       background-size: 300% 300%;
       background-repeat: no-repeat;
       cursor: pointer;
-      transition: all 0.2s;
-      border-radius: 4px;
+      border-radius: 6px;
+      transition: all 0.25s ease;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
     }
+
     .empty {
-      background: #ddd;
+      background: #444;
       cursor: default;
     }
-    #controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    img {
-      width: 100px;
-      border: 2px solid #444;
-    }
+
     #winMessage {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: bold;
-      color: green;
-      margin-top: 10px;
+      color: #ffd700;
+      margin-top: 15px;
       display: none;
+      text-shadow: 1px 1px 4px #000;
     }
+
     #playAgain {
       margin-top: 10px;
-      padding: 8px 16px;
+      padding: 10px 18px;
       font-size: 16px;
       border: none;
-      border-radius: 6px;
-      background: #4CAF50;
-      color: white;
+      border-radius: 8px;
+      background: #2ed573;
+      color: #fff;
       cursor: pointer;
       display: none;
+      transition: 0.2s;
     }
+
     #playAgain:hover {
-      background: #45a049;
+      background: #1eae56;
+    }
+
+    footer {
+      margin-top: auto;
+      padding: 10px;
+      font-size: 14px;
+      color: #ddd;
+      text-align: center;
+    }
+
+    footer a {
+      color: #ff6b6b;
+      text-decoration: none;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <h2>Sliding Image Puzzle</h2>
+  <h1>🧩 Sliding Image Puzzle</h1>
   <div id="controls">
     <button onclick="shuffle()">Shuffle</button>
     <input type="file" id="upload" accept="image/*">
     <span>Moves: <span id="moves">0</span></span>
     <img id="preview" src="https://picsum.photos/300" alt="preview">
   </div>
+
   <div id="puzzle"></div>
   <div id="winMessage">🎉 You Win!</div>
-  <button id="playAgain" onclick="init()">Play Again</button>
+  <button id="playAgain" onclick="shuffle()">Play Again</button>
+
+  <footer>
+    Made by Aditya Chavan ❤️ | <a href="https://github.com/adityachavan" target="_blank">Code</a>
+  </footer>
 
 <script>
   const size = 3; // 3x3 puzzle
@@ -113,7 +180,7 @@
         tile.style.backgroundImage = `url(${imgUrl})`;
         tile.style.backgroundSize = `${size*100}% ${size*100}%`;
         tile.style.backgroundPosition = `${(col/(size-1))*100}% ${(row/(size-1))*100}%`;
-        tile.dataset.correct = index; // ✅ save correct position
+        tile.dataset.correct = index;
 
         tile.addEventListener("click", () => {
           const currentIndex = tiles.indexOf(tile);
@@ -191,7 +258,7 @@
       }
     }
     winMessage.style.display = "block";
-    playAgainBtn.style.display = "inline-block"; // ✅ show button on win
+    playAgainBtn.style.display = "inline-block";
   }
 
   document.getElementById("upload").addEventListener("change", function(e){
